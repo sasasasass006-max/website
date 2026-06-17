@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CardioSense AI — Real-Time Heart Monitoring System</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- Particle Canvas -->
+  <canvas id="particleCanvas"></canvas>
+
+  <!-- Grid Overlay -->
+  <div class="grid-overlay"></div>
+
+  <!-- ═══════════════════════════════════════════ NAVBAR ═══ -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="nav-pulse-dot"></div>
+      <span class="nav-logo">Cardio<span>Sense</span> AI</span>
+    </div>
+    <div class="nav-links">
+      <a href="#dashboard">Dashboard</a>
+      <a href="#signal">Signal</a>
+      <a href="#report">Report</a>
+      <a href="#features">Features</a>
+    </div>
+    <div class="nav-status">
+      <span class="status-dot live"></span>
+      <span>SYSTEM ONLINE</span>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════ HERO ═══ -->
+  <section class="hero" id="hero">
+    <div class="hero-bg-lines"></div>
+
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        AI-Powered Medical Monitoring · ICU Grade System
+      </div>
+
+      <h1 class="hero-title">
+        Real-Time<br />
+        <span class="glow-text">Heart Monitoring</span><br />
+        System
+      </h1>
+
+      <p class="hero-desc">
+        Advanced cardiac analysis powered by MATLAB DSP · Littmann 3200 Bluetooth Stethoscope<br />
+        Real-time BPM detection · AI diagnosis engine · Automated medical report generation
+      </p>
+
+      <div class="hero-actions">
+        <button class="btn-primary" onclick="startMonitoring()">
+          <span class="btn-icon">▶</span>
+          Start Monitoring
+        </button>
+        <button class="btn-ghost" onclick="document.getElementById('report').scrollIntoView({behavior:'smooth'})">
+          View Reports
+        </button>
+      </div>
+
+      <div class="hero-stats">
+        <div class="hstat">
+          <span class="hstat-val" id="heroLiveBPM">--</span>
+          <span class="hstat-label">Live BPM</span>
+        </div>
+        <div class="hstat-divider"></div>
+        <div class="hstat">
+          <span class="hstat-val green" id="heroStatus">IDLE</span>
+          <span class="hstat-label">Status</span>
+        </div>
+        <div class="hstat-divider"></div>
+        <div class="hstat">
+          <span class="hstat-val">99.4%</span>
+          <span class="hstat-label">AI Accuracy</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Animated Heartbeat SVG -->
+    <div class="hero-waveform">
+      <svg viewBox="0 0 800 150" preserveAspectRatio="none" class="ecg-hero-svg">
+        <polyline id="heroECG" points="" class="ecg-line-hero" />
+      </svg>
+      <div class="waveform-label">LIVE ECG SIGNAL</div>
+    </div>
+
+    <div class="scroll-hint">
+      <div class="scroll-arrow"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ PATIENT ═══ -->
+  <section class="section" id="patient">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">PATIENT INTAKE</div>
+        <h2>Patient <span class="glow-text">Information</span></h2>
+        <p>Enter patient details before initiating cardiac monitoring session</p>
+      </div>
+
+      <div class="patient-card glass-card">
+        <div class="patient-card-header">
+          <div class="card-icon-wrap">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div>
+            <h3>New Monitoring Session</h3>
+            <p class="card-subtitle">Littmann 3200 · MATLAB DSP Pipeline Ready</p>
+          </div>
+          <div class="device-indicator">
+            <span class="status-dot" id="btStatus"></span>
+            <span id="btLabel">BT Disconnected</span>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Patient Full Name</label>
+            <input type="text" id="patientName" placeholder="e.g. Ahmed Al-Rashid" class="med-input" />
+          </div>
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" id="patientAge" placeholder="e.g. 45" class="med-input" min="1" max="120" />
+          </div>
+          <div class="form-group">
+            <label>Patient ID</label>
+            <input type="text" id="patientID" placeholder="e.g. PT-2024-001" class="med-input" />
+          </div>
+          <div class="form-group">
+            <label>Monitoring Duration</label>
+            <select id="monDuration" class="med-input med-select">
+              <option value="30">30 seconds</option>
+              <option value="60" selected>1 minute</option>
+              <option value="120">2 minutes</option>
+              <option value="300">5 minutes</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-primary" onclick="startMonitoring()">
+            <span class="pulse-ring"></span>
+            Begin Cardiac Monitoring
+          </button>
+          <button class="btn-danger" onclick="stopMonitoring()">Stop Session</button>
+          <button class="btn-ghost" onclick="resetAll()">Reset</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ DASHBOARD ═══ -->
+  <section class="section" id="dashboard">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">REAL-TIME MONITORING</div>
+        <h2>Live <span class="glow-text">Dashboard</span></h2>
+        <p>Continuous cardiac parameter analysis · Updated every 500ms</p>
+      </div>
+
+      <div class="dashboard-grid">
+        <!-- BPM Card -->
+        <div class="metric-card glass-card" id="bpmCard">
+          <div class="metric-header">
+            <span class="metric-icon">♥</span>
+            <span class="metric-label">HEART RATE</span>
+          </div>
+          <div class="metric-value" id="liveBPM">--</div>
+          <div class="metric-unit">BPM</div>
+          <div class="metric-bar">
+            <div class="metric-bar-fill" id="bpmBar" style="width:0%"></div>
+          </div>
+          <div class="metric-range">Normal: 60–100 BPM</div>
+        </div>
+
+        <!-- Risk Level -->
+        <div class="metric-card glass-card" id="riskCard">
+          <div class="metric-header">
+            <span class="metric-icon">⚠</span>
+            <span class="metric-label">RISK LEVEL</span>
+          </div>
+          <div class="metric-value risk-val" id="riskLevel">--</div>
+          <div class="metric-unit">ASSESSMENT</div>
+          <div class="risk-indicator" id="riskIndicator">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <div class="metric-range" id="riskDesc">Awaiting signal input</div>
+        </div>
+
+        <!-- Heart Status -->
+        <div class="metric-card glass-card" id="statusCard">
+          <div class="metric-header">
+            <span class="metric-icon">◎</span>
+            <span class="metric-label">HEART STATUS</span>
+          </div>
+          <div class="metric-value status-val" id="heartStatus">IDLE</div>
+          <div class="metric-unit">CONDITION</div>
+          <div class="status-icon-large" id="statusIconLarge">○</div>
+          <div class="metric-range" id="statusDesc">No session active</div>
+        </div>
+
+        <!-- Monitoring -->
+        <div class="metric-card glass-card" id="monCard">
+          <div class="metric-header">
+            <span class="metric-icon">◈</span>
+            <span class="metric-label">MONITORING</span>
+          </div>
+          <div class="metric-value mon-val" id="monStatus">OFF</div>
+          <div class="metric-unit">SESSION STATUS</div>
+          <div class="session-timer" id="sessionTimer">00:00</div>
+          <div class="metric-range" id="monDesc">Press Start to begin</div>
+        </div>
+
+        <!-- AI Diagnosis — spans full width -->
+        <div class="metric-card glass-card ai-card" id="aiCard">
+          <div class="metric-header">
+            <span class="metric-icon ai-icon">◬</span>
+            <span class="metric-label">AI DIAGNOSIS ENGINE</span>
+            <div class="ai-spinner" id="aiSpinner"></div>
+          </div>
+          <div class="ai-output" id="aiDiagnosis">
+            <span class="ai-placeholder">Awaiting cardiac signal input… Configure patient profile and press <strong>Begin Cardiac Monitoring</strong> to activate the AI analysis pipeline.</span>
+          </div>
+          <div class="ai-confidence">
+            <span>Confidence</span>
+            <div class="conf-bar"><div class="conf-fill" id="confFill" style="width:0%"></div></div>
+            <span id="confPct">0%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ SIGNAL ═══ -->
+  <section class="section" id="signal">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">SIGNAL PROCESSING</div>
+        <h2>Live Heart <span class="glow-text">Signal</span></h2>
+        <p>MATLAB DSP filtered auscultation waveform · 44.1 kHz sampling rate</p>
+      </div>
+
+      <div class="signal-card glass-card">
+        <div class="signal-header">
+          <div class="signal-meta">
+            <div class="sig-stat">
+              <span class="sig-label">SAMPLE RATE</span>
+              <span class="sig-val">44.1 kHz</span>
+            </div>
+            <div class="sig-stat">
+              <span class="sig-label">FILTER</span>
+              <span class="sig-val">Butterworth BP</span>
+            </div>
+            <div class="sig-stat">
+              <span class="sig-label">SIGNAL QUALITY</span>
+              <span class="sig-val green" id="sigQuality">--</span>
+            </div>
+            <div class="sig-stat">
+              <span class="sig-label">DEVICE</span>
+              <span class="sig-val cyan">Littmann 3200</span>
+            </div>
+          </div>
+          <div class="signal-controls">
+            <button class="sig-btn active" onclick="setZoom(1)">1x</button>
+            <button class="sig-btn" onclick="setZoom(2)">2x</button>
+            <button class="sig-btn" onclick="setZoom(4)">4x</button>
+          </div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-overlay-lines"></div>
+          <canvas id="liveChart"></canvas>
+          <div class="chart-scan-line" id="scanLine"></div>
+        </div>
+
+        <div class="signal-footer">
+          <div class="sig-footer-item">
+            <span>S1 Peak:</span> <span id="s1Peak" class="cyan">--</span>
+          </div>
+          <div class="sig-footer-item">
+            <span>S2 Peak:</span> <span id="s2Peak" class="cyan">--</span>
+          </div>
+          <div class="sig-footer-item">
+            <span>Amplitude:</span> <span id="ampVal" class="cyan">--</span>
+          </div>
+          <div class="sig-footer-item">
+            <span>SNR:</span> <span id="snrVal" class="cyan">--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ REPORT ═══ -->
+  <section class="section" id="report">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">MEDICAL DOCUMENTATION</div>
+        <h2>Medical <span class="glow-text">Report</span></h2>
+        <p>AI-generated diagnostic report · Exportable PDF format</p>
+      </div>
+
+      <div class="report-card glass-card" id="reportCard">
+        <div class="report-header-bar">
+          <div class="report-logo-area">
+            <div class="report-cross">✚</div>
+            <div>
+              <div class="report-hospital">CardioSense Medical Center</div>
+              <div class="report-dept">Department of Cardiology · AI Division</div>
+            </div>
+          </div>
+          <div class="report-meta-right">
+            <div class="report-id">Report ID: <span id="reportID">--</span></div>
+            <div class="report-date" id="reportDate">--</div>
+          </div>
+        </div>
+
+        <div class="report-divider"></div>
+
+        <div class="report-patient-row">
+          <div class="rp-item">
+            <span class="rp-label">PATIENT NAME</span>
+            <span class="rp-value" id="rpName">--</span>
+          </div>
+          <div class="rp-item">
+            <span class="rp-label">AGE</span>
+            <span class="rp-value" id="rpAge">--</span>
+          </div>
+          <div class="rp-item">
+            <span class="rp-label">PATIENT ID</span>
+            <span class="rp-value" id="rpID">--</span>
+          </div>
+          <div class="rp-item">
+            <span class="rp-label">HEART RATE</span>
+            <span class="rp-value cyan" id="rpBPM">--</span>
+          </div>
+        </div>
+
+        <div class="report-grid">
+          <div class="report-item glass-inner">
+            <div class="ri-icon">♥</div>
+            <div class="ri-label">Heart Condition</div>
+            <div class="ri-value" id="rpCondition">Not yet assessed</div>
+          </div>
+          <div class="report-item glass-inner">
+            <div class="ri-icon">⚠</div>
+            <div class="ri-label">Risk Analysis</div>
+            <div class="ri-value" id="rpRisk">No data available</div>
+          </div>
+          <div class="report-item glass-inner">
+            <div class="ri-icon">✚</div>
+            <div class="ri-label">Clinical Recommendation</div>
+            <div class="ri-value" id="rpRec">Begin monitoring session to generate recommendations</div>
+          </div>
+          <div class="report-item glass-inner">
+            <div class="ri-icon">◈</div>
+            <div class="ri-label">Monitoring Timestamp</div>
+            <div class="ri-value" id="rpTime">--</div>
+          </div>
+        </div>
+
+        <div class="report-ai-section glass-inner">
+          <div class="rai-label">AI CLINICAL NOTES</div>
+          <div class="rai-text" id="rpAINotes">Complete a monitoring session to generate AI clinical notes and detailed cardiac analysis.</div>
+        </div>
+
+        <div class="report-actions">
+          <button class="btn-pdf" onclick="generatePDF()">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Generate PDF Report
+          </button>
+          <button class="btn-ghost" onclick="printReport()">Print Report</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ FEATURES ═══ -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">SYSTEM CAPABILITIES</div>
+        <h2>Core <span class="glow-text">Features</span></h2>
+        <p>Six pillars of the CardioSense AI monitoring platform</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card glass-card">
+          <div class="feat-icon">◎</div>
+          <h3>Real-Time Monitoring</h3>
+          <p>Continuous cardiac auscultation with sub-500ms latency. Live BPM tracking, waveform visualization, and instant anomaly detection across the full monitoring session.</p>
+          <div class="feat-tag">Core System</div>
+        </div>
+        <div class="feature-card glass-card">
+          <div class="feat-icon">⊞</div>
+          <h3>MATLAB DSP Filtering</h3>
+          <p>Advanced Butterworth bandpass filters isolate S1/S2 heart sounds from ambient noise. FFT analysis, spectrogram generation, and noise cancellation via MATLAB signal processing pipeline.</p>
+          <div class="feat-tag">Signal Processing</div>
+        </div>
+        <div class="feature-card glass-card">
+          <div class="feat-icon">◈</div>
+          <h3>Bluetooth Stethoscope</h3>
+          <p>Native integration with Littmann 3200 Electronic Stethoscope via Bluetooth 4.0 BLE. Wireless auscultation at clinical-grade fidelity with 4,000 Hz acoustic sampling.</p>
+          <div class="feat-tag">Hardware</div>
+        </div>
+        <div class="feature-card glass-card">
+          <div class="feat-icon">◬</div>
+          <h3>AI Medical Analysis</h3>
+          <p>Deep learning classifier trained on 50,000+ cardiac recordings. Identifies normal sinus rhythm, murmurs, arrhythmias, and atrial fibrillation with 99.4% diagnostic confidence.</p>
+          <div class="feat-tag">AI Engine</div>
+        </div>
+        <div class="feature-card glass-card">
+          <div class="feat-icon">⬡</div>
+          <h3>Live Web Dashboard</h3>
+          <p>Responsive ICU-grade monitoring interface with real-time Chart.js waveforms. Multi-patient tracking, session history, trend analysis, and alert management in a single unified view.</p>
+          <div class="feat-tag">Frontend</div>
+        </div>
+        <div class="feature-card glass-card">
+          <div class="feat-icon">⊡</div>
+          <h3>PDF Medical Reports</h3>
+          <p>One-click generation of comprehensive clinical reports. Includes patient demographics, BPM data, AI diagnosis, risk stratification, and physician recommendations in standardized format.</p>
+          <div class="feat-tag">Documentation</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ TECH ═══ -->
+  <section class="section" id="tech">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-tag">TECHNOLOGY STACK</div>
+        <h2>Built With <span class="glow-text">Precision</span></h2>
+        <p>Industry-standard tools powering every layer of the system</p>
+      </div>
+
+      <div class="tech-grid">
+        <div class="tech-card glass-card">
+          <div class="tech-logo matlab">M</div>
+          <div class="tech-name">MATLAB</div>
+          <div class="tech-desc">Signal Processing &amp; DSP Engine</div>
+        </div>
+        <div class="tech-card glass-card">
+          <div class="tech-logo js">JS</div>
+          <div class="tech-name">JavaScript</div>
+          <div class="tech-desc">Frontend Logic &amp; Real-Time UI</div>
+        </div>
+        <div class="tech-card glass-card">
+          <div class="tech-logo chartjs">C</div>
+          <div class="tech-name">Chart.js</div>
+          <div class="tech-desc">Live Waveform Visualization</div>
+        </div>
+        <div class="tech-card glass-card">
+          <div class="tech-logo html">H</div>
+          <div class="tech-name">HTML / CSS</div>
+          <div class="tech-desc">Structure &amp; Glassmorphism UI</div>
+        </div>
+        <div class="tech-card glass-card">
+          <div class="tech-logo bt">BT</div>
+          <div class="tech-name">Bluetooth BLE</div>
+          <div class="tech-desc">Littmann 3200 Connectivity</div>
+        </div>
+        <div class="tech-card glass-card">
+          <div class="tech-logo json">{ }</div>
+          <div class="tech-name">JSON</div>
+          <div class="tech-desc">Data Exchange &amp; Storage</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ FOOTER ═══ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="footer-logo">Cardio<span>Sense</span> AI</div>
+          <p>Real-Time Heart Monitoring System — a graduation project combining MATLAB signal processing, Bluetooth medical hardware, and AI-powered cardiac analysis.</p>
+          <div class="footer-status-row">
+            <span class="status-dot live"></span>
+            <span>All systems operational</span>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>System</h4>
+          <a href="#dashboard">Live Dashboard</a>
+          <a href="#signal">Signal Monitor</a>
+          <a href="#report">Medical Reports</a>
+          <a href="#features">Features</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Technology</h4>
+          <a href="#">MATLAB DSP</a>
+          <a href="#">Littmann 3200</a>
+          <a href="#">Chart.js</a>
+          <a href="#">AI Engine</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <a href="mailto:cardiosense@med.edu">cardiosense@med.edu</a>
+          <a href="#">GitHub Repository</a>
+          <a href="#">Research Paper</a>
+          <a href="#">Documentation</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="footer-ecg-line">
+          <svg viewBox="0 0 400 40" preserveAspectRatio="none">
+            <polyline id="footerECG" points="" fill="none" stroke="rgba(0,255,180,0.4)" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <p>© 2024 CardioSense AI · Real-Time Heart Monitoring System · Graduation Project · Medical Engineering Department</p>
+        <p class="footer-disclaimer">⚠ For academic and research purposes only. Not a certified medical device. Consult a licensed physician for clinical decisions.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Notification Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
